@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import os
 import tempfile
 import threading
@@ -26,6 +27,8 @@ from img_compress import (
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-only-change-me")
+UPLOADS_DIR = Path(os.environ.get("UPLOADS_DIR", "uploads"))
+UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
 JOBS: dict[str, dict] = {}
 JOBS_LOCK = threading.Lock()
@@ -84,7 +87,7 @@ def compress():
 
     requested_job_id = request.form.get("job_id", "")
     job_id = requested_job_id if requested_job_id.isalnum() else uuid.uuid4().hex
-    upload_dir = Path(tempfile.mkdtemp(prefix="img-compress-"))
+    upload_dir = Path(tempfile.mkdtemp(prefix="img-compress-", dir=UPLOADS_DIR))
     compressed_dir = upload_dir / "compressed"
     compressed_dir.mkdir(exist_ok=True)
 
@@ -406,5 +409,22 @@ btn.addEventListener('click', async () => {
 '''
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run the Image Compressor web UI.")
+    parser.add_argument(
+        "--host",
+        default=os.environ.get("HOST", "0.0.0.0"),
+        help="Host interface to bind to (default: 0.0.0.0)",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=int(os.environ.get("PORT", "8080")),
+        help="Port to listen on (default: 8080)",
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "8080")), debug=True)
+    args = parse_args()
+    app.run(host=args.host, port=args.port, debug=os.environ.get("FLASK_DEBUG") == "1")

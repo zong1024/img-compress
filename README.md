@@ -15,7 +15,26 @@ Open `http://localhost:8080`.
 
 The web app lets you drag in multiple JPG, PNG, WEBP, BMP, or TIFF files, preview them as thumbnails, tune target size / max dimension / worker count, watch live progress, download each result, or download the whole batch as a ZIP.
 
-Uploaded files are written into a temporary directory for the current session. Compressed outputs are created in a sibling `compressed/` folder inside that temp directory.
+Uploaded files are written into session-specific temporary directories under `uploads/`. Compressed outputs are created in a sibling `compressed/` folder inside each session directory.
+
+## Docker
+
+Build and run the container directly:
+
+```bash
+mkdir -p uploads
+docker build -t img-compress .
+docker run --rm -p 8080:8080 -v "$(pwd)/uploads:/app/uploads" img-compress
+```
+
+Or run it with Docker Compose:
+
+```bash
+mkdir -p uploads
+docker compose up --build -d
+```
+
+Then open `http://localhost:8080`. The mounted `./uploads` directory keeps uploaded and compressed files on the host between container restarts.
 
 ## CLI
 
